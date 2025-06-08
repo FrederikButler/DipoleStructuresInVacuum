@@ -292,7 +292,6 @@ def PlotEigenstateEvolution(eigenvalues, eigenvectors, time, title = 'Time evolu
     plt.ylabel(r"$|\chi(t)|^2$")
     plt.show()
 
-
 def RandInitialStateEvolution(eigenvalues, eigenvectors, init_state, time, return_init_lambdabase=False): 
     '''
     Given the eigenstates, eigenvalues of a chain and a normalized initial state, and a time (as linspace in gammas) 
@@ -318,7 +317,6 @@ def RandInitialStateEvolution(eigenvalues, eigenvectors, init_state, time, retur
         return init_state_lambdabase, prob_exc_sites_t
     else:
         return prob_exc_sites_t
-
 
 def InitialStateEvolutionHeatMap(prob_exc_sites_t, time):
 
