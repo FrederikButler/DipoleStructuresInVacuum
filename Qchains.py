@@ -422,7 +422,7 @@ def SiteAmplitudeDistribution(eig_values, eig_vectors, state_num, hue=False, fig
     cbar.set_label("Phase", fontsize=12, labelpad=10)
 
     plt.xlabel('Site')
-    plt.ylabel(r'$c_j$')
+    plt.ylabel(r'$Re(c_j)$')
     plt.title(rf'$\xi = {state_num + 1}$')
     #plt.legend()
     plt.show()
@@ -480,7 +480,7 @@ def SiteProbAndAmplitudeDistribution(eig_values, eig_vectors, state_num, titlepr
     bars_prob = axs[0].bar(sites, site_prob, color = colors) #label = r'$ |c_j|^2 $'
     bars_site = axs[1].bar(sites, site_coeff, color=colors) #label = r'$ c_j $'
 
-    fontsize = 16
+    fontsize = 18
     # Create and add colorbar
     
     sm.set_array([])
@@ -491,7 +491,7 @@ def SiteProbAndAmplitudeDistribution(eig_values, eig_vectors, state_num, titlepr
     axs[0].set_xlabel('Site', fontsize = fontsize )
     axs[0].set_ylabel(r'$|c_j|^2$', fontsize = fontsize)
     axs[1].set_xlabel('Site', fontsize = fontsize)
-    axs[1].set_ylabel(r'$c_j$', fontsize = fontsize)
+    axs[1].set_ylabel(r'Re($c_j$)', fontsize = fontsize)
     
     if is_star:
         axs[0].axvline(x=sites[len(sites)//2] -0.5, color='grey', linestyle='--', linewidth=0.5, label = 'Seperation of inner and outer ring')
