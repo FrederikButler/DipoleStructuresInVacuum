@@ -6,14 +6,15 @@ import matplotlib.cm as cm
 from matplotlib.colors import hsv_to_rgb
 import cmath
 
+##Structure generators
 def ArrayGenerator(num_points, showStructure = False):
-    chain_3d = np.zeros((num_points, 3))  # shape (50, 3), all zeros to start
+    chain_3d = np.zeros((num_points, 3))  # shape (num_points, 3), all zeros to start
     chain_3d[:, 0] = np.arange(num_points)  # Set x-coordinates
 
     if showStructure == True: 
         x, y, z = chain_3d[:, 0], chain_3d[:, 1], chain_3d[:, 2]
 
-        #interactive scatter plot
+        #Interactive scatter plot
         fig = go.Figure(data=[go.Scatter3d(
             x=x, y=y, z=z,
             mode='markers',
@@ -41,14 +42,12 @@ def RingGenerater(n_points, showStructure = False):
     y = np.sin(angles)
     points = np.stack((x, y), axis=-1)  # shape (n_points, 2)
 
-    # Compute distance between two neighboring points
-    side_length = np.linalg.norm(points[0] - points[1])
-
     # Scale so that side length is 1
+    side_length = np.linalg.norm(points[0] - points[1])
     scale = 1.0 / side_length
     points *= scale
 
-    # Embed in 3D by adding z=0
+    #Make 3d (but in plane)
     points_3d = np.hstack((points, np.zeros((n_points, 1))))
 
     if showStructure == True: 
@@ -75,39 +74,35 @@ def StarGenerator(n_half_points, showStructure=False):
     if n_half_points < 3:
         raise ValueError("Polygon must have at least 3 points.")
 
-    # Step 1: Regular polygon on unit circle
+    #Regular polygon on unit circle
     angles = np.linspace(0, 2 * np.pi, n_half_points, endpoint=False)
     x = np.cos(angles)
     y = np.sin(angles)
     points = np.stack((x, y), axis=-1)
     
-    # Scale so edge length = 1
+    # Scale length to 1
     side_length = np.linalg.norm(points[0] - points[1])
     scale = 1.0 / side_length
     points *= scale
     points_3d = np.hstack((points, np.zeros((n_half_points, 1))))
 
-    # Step 2: Add triangle peaks
+    # Add triangle peaks
     triangle_peaks = []
     for i in range(n_half_points):
         p1 = points_3d[i]
-        p2 = points_3d[(i + 1) % n_half_points]  # wrap around
+        p2 = points_3d[(i + 1) % n_half_points]
 
-        # Midpoint of edge
+        # Edges
         mid = 0.5 * (p1 + p2)
-
-        # Direction of edge
         edge_vec = p2 - p1
         edge_vec /= np.linalg.norm(edge_vec)
 
-        # Perpendicular direction (normal to the polygon plane)
+        # Perpendicular direction to the polygon plane
         normal_vec = np.array([0, 0, 1])  # z-direction
         outward_dir = np.cross(edge_vec, normal_vec)
         outward_dir /= np.linalg.norm(outward_dir)
 
-        # Height of isosceles triangle from base to tip:
-        # For base length b and legs L:
-        # height h = sqrt(L^2 - (b/2)^2)
+        # Height of isosceles triangle from base to tip: # height h = sqrt(L^2 - (b/2)^2)
         b = np.linalg.norm(p2 - p1)
         L = 1.0  # desired leg length
         h = np.sqrt(L**2 - (b / 2)**2)
@@ -120,11 +115,9 @@ def StarGenerator(n_half_points, showStructure=False):
 
     all_points = np.vstack((points_3d, triangle_peaks))
 
-
     if showStructure:
         fig = go.Figure()
 
-        # Original base points (orange)
       # Close the ring loop
         ring_closed = np.vstack([points_3d, points_3d[0:1]])
 
@@ -156,7 +149,10 @@ def StarGenerator(n_half_points, showStructure=False):
 
     return all_points
 
+
+#Plot of any structure
 def StructurePlotter(points_3d, title = "Geometry of the atoms" ):
+    '''For plotting of general geometry'''
     x, y, z = points_3d[:, 0], points_3d[:, 1], points_3d[:, 2]
 
     fig = go.Figure(data=[go.Scatter3d(
@@ -173,6 +169,8 @@ def StructurePlotter(points_3d, title = "Geometry of the atoms" ):
     )
     fig.show()
 
+
+##Solvers of the eigenvalue problem 
 def FindEigenstates(points, dipole_vec_hat, distance):
     '''
     Solve the problem of db/dt = -1/2Gamma b - 1/2 Gamma F b. Solves it unitless. That is 
@@ -187,7 +185,7 @@ def FindEigenstates(points, dipole_vec_hat, distance):
     Eigvalues of A 
     Eigvectors of A. They are in the columns!
     '''
-    #distance_matrix = distance_matrix(points, points) eventuelt for hurtigere 
+    #Vector distances
     r_ij_vector = points[:, np.newaxis] - points
     r_ij = np.linalg.norm(r_ij_vector, axis=2, keepdims=True)
     r_ij_hat = np.divide(r_ij_vector, r_ij, out=np.zeros_like(r_ij_vector, dtype=float), where=(r_ij != 0)) 
@@ -226,10 +224,7 @@ def FindEigenstates(points, dipole_vec_hat, distance):
     return A_eigenvalues, A_eigenvectors
 
 def EigenstatesHedgehog(ring_points, unit_polarizations, distance):
-
-
-    ### Find eigenvalues and eigenstates of this system 
-    #distance_matrix = distance_matrix(points, points) eventuelt for hurtigere 
+    '''Solve the same problem as FindEigenstates but for individual polarization on each atom site'''
     r_ij_vector = ring_points[:, np.newaxis] - ring_points
     r_ij = np.linalg.norm(r_ij_vector, axis=2, keepdims=True)
     r_ij_hat = np.divide(r_ij_vector, r_ij, out=np.zeros_like(r_ij_vector, dtype=float), where=(r_ij != 0)) 
@@ -269,6 +264,8 @@ def EigenstatesHedgehog(ring_points, unit_polarizations, distance):
     A_eigenvalues, A_eigenvectors = np.linalg.eig(A)
     return A_eigenvalues, A_eigenvectors
 
+
+#Eigenstate evolution plot
 def PlotEigenstateEvolution(eigenvalues, eigenvectors, time, title = 'Time evolution starting in eigenstate', legend=True):
     '''
     Creates a plot of the time evolution of the eigenstates. So it shows the probability of being in
@@ -292,15 +289,17 @@ def PlotEigenstateEvolution(eigenvalues, eigenvectors, time, title = 'Time evolu
     plt.ylabel(r"$|\chi(t)|^2$")
     plt.show()
 
+
+#Solve for random initial state
 def RandInitialStateEvolution(eigenvalues, eigenvectors, init_state, time, return_init_lambdabase=False): 
     '''
     Given the eigenstates, eigenvalues of a chain and a normalized initial state, and a time (as linspace in gammas) 
-    this function converts the initial state to the basis of the eigenstates. In this basis we now the time evolution. 
+    this function converts the initial state to the basis of the eigenstates. In this basis we know the time evolution. 
     So we get the time evolution for the probability to be on each site in the lambda base. We convert back to the i-base. 
 
     So the function returns a matrix with (#sites, P(t)). So for each site the probability that a site is excited over the interval
     '''
-    A_eigenvectors_inv = np.linalg.inv(eigenvectors)        #so that A_eigvectors_inv * eigenvectors = I 
+    A_eigenvectors_inv = np.linalg.inv(eigenvectors)        #so that A_eigvectors_inv * eigenvectors(matrix) = I 
 
     tester = np.round(A_eigenvectors_inv @ eigenvectors, 14)
     is_identity = np.array_equal(tester, np.eye(eigenvectors.shape[0]))
@@ -318,15 +317,7 @@ def RandInitialStateEvolution(eigenvalues, eigenvectors, init_state, time, retur
     else:
         return prob_exc_sites_t
 
-def InitialStateEvolutionHeatMap(prob_exc_sites_t, time):
-
-    '''
-    Plots the different sites on the x-axis and the time on the y-axis. Each state pixel gets coloured by the value of  the 
-    probability that the given site is excited at that time. Note the y axis needs some extra thought. time = np.linspace(0, t_final, res). 
-    So the second argument gives how many Gammas/decay rates you are shown whereas the third argument res simply gives you the resolution. 
-    Thus if t_final = res then each pixel you move up corresponds to one time of Gamma passing. 
-    '''
-
+##Site distributions
 def SiteProbDistribution(eig_values, eig_vectors, state_num, figsize, hue=False): 
     #sort eigenvalues and eigenvectors. Lowest index being most sub-radiant and highest subradiant 
     sorted_indices = np.lexsort((eig_values.real, np.abs(eig_values.real)))
@@ -498,7 +489,7 @@ def SiteProbAndAmplitudeDistribution(eig_values, eig_vectors, state_num, titlepr
         axs[1].axvline(x=sites[len(sites)//2] -0.5, color='grey', linestyle='--', linewidth=0.5, label = 'Seperation of inner and outer ring')
         plt.legend()
 
-    
+    #Change title based on configuration
     if interrupted_array: 
         fig.suptitle(rf'$\xi = {state_num + 1}$ for interrupted, $\Gamma / \Gamma_0 = {state_vec_decay_rate}$', x = 0.43, fontsize = fontsize + 2)
     elif is_ring: 
